@@ -196,10 +196,22 @@ private extension Conversation {
                 if let sessionUpdateCallback { try updateSession(withChanges: sessionUpdateCallback) }
             case let .sessionUpdated(_, session):
                 self.session = session
-            case let .conversationItemCreated(_, item, _):
+        case let .conversationItemCreated(_, item, _):
+            entries.append(item)
+        case let .conversationItemAdded(_, item, _):
+            // Only add if not already present
+            if !entries.contains(where: { $0.id == item.id }) {
                 entries.append(item)
-            case let .conversationItemDeleted(_, itemId):
-                entries.removeAll { $0.id == itemId }
+            }
+        case let .conversationItemDone(_, item, _):
+            // Update existing item or add if not present
+            if let index = entries.firstIndex(where: { $0.id == item.id }) {
+                entries[index] = item
+            } else {
+                entries.append(item)
+            }
+        case let .conversationItemDeleted(_, itemId):
+            entries.removeAll { $0.id == itemId }
             case let .conversationItemInputAudioTranscriptionCompleted(_, itemId, contentIndex, transcript, _, _):
                 updateEvent(id: itemId) { message in
                     guard case let .inputAudio(audio) = message.content[contentIndex] else { return }
