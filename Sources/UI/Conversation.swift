@@ -15,7 +15,7 @@ public final class Conversation: @unchecked Sendable {
     public typealias SessionUpdateCallback = (inout Session) -> Void
 
     private let client: WebRTCConnector
-    private var task: Task<Void, Error>!
+    private nonisolated(unsafe) var task: Task<Void, Error>!
     private let sessionUpdateCallback: SessionUpdateCallback?
     private let errorStream: AsyncStream<ServerError>.Continuation
 
@@ -88,8 +88,28 @@ public final class Conversation: @unchecked Sendable {
     }
 
     deinit {
+        print("🗑️ Conversation deinit - disconnecting...")
+        task?.cancel()
         client.disconnect()
         errorStream.finish()
+        print("✅ Conversation disconnected")
+    }
+
+    /// Explicitly disconnect and clean up resources
+    public func disconnect() {
+        print("🔌 Conversation.disconnect() called")
+        guard status != .disconnected else {
+            print("   Already disconnected")
+            return
+        }
+        
+        // Cancel the event listening task
+        task?.cancel()
+        
+        // Disconnect the WebRTC client
+        client.disconnect()
+        
+        print("✅ Conversation.disconnect() complete")
     }
 
     public func connect(using request: URLRequest) async throws {

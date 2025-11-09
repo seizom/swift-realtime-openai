@@ -86,7 +86,13 @@ import FoundationNetworking
     }
 
     public func disconnect() {
+        // Disable the audio track to stop microphone capture
+        audioTrack.isEnabled = false
+        
+        // Close the peer connection
         connection.close()
+        
+        // Finish the event stream
         stream.finish()
     }
 
